@@ -1,0 +1,86 @@
+name: .NET Desktop
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    strategy:
+      matrix:
+        configuration: [Release]
+    runs-on: windows-latest
+    
+    env:
+      SOLUTION: ZAShinyStoragePlugin.sln
+      BUILD_PLATFORM: Any CPU
+      BUILD_CONFIGURATION: Release
+    
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Setup NuGet
+      uses: nuget/setup-nuget@v2
+      with:
+        nuget-version: '>=6.4.0'
+    
+    - name: Restore NuGet packages
+      run: nuget restore ${{ env.SOLUTION }}    
+   
+    - name: Build plugin
+      run: >
+        dotnet build ZAShinyStoragePlugin\ZAShinyStoragePlugin.csproj
+        --configuration Release
+        --output "${{ github.workspace }}\bin\Release\net9.0-windows\"
+    
+    - name: Prepare artifacts
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\bin"
+        Copy-Item "${{ github.workspace }}\bin\Release\net9.0-windows\ZAShinyStoragePlugin.dll" `
+          -Destination "${{ github.workspace }}\bin\" -Force
+    
+    - name: Create ZIP archive
+      shell: pwsh
+      run: |
+        Compress-Archive -Path "${{ github.workspace }}\bin\ZAShinyStoragePlugin.dll" `
+          -DestinationPath "${{ github.workspace }}\ZAShinyStoragePlugin.zip"
+    
+    - name: Generate version tag
+      id: version
+      shell: pwsh
+      run: |
+        $patchVersion = ${{ github.run_number }} - 5
+        $version = "v1.0.$patchVersion"
+        echo "tag=$version" >> $env:GITHUB_OUTPUT
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.tag }}
+        name: Release ${{ steps.version.outputs.tag }}
+        body: |
+          Automated release from commit ${{ github.sha }}
+          
+          ## Changes
+          - Built from latest main branch
+        files: |
+          ZAShinyStoragePlugin.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ZAShinyStoragePlugin
+        path: bin/

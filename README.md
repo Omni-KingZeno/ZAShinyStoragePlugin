@@ -22,7 +22,7 @@ To use the plugins:
 To contribute to the repository, you can submit a pull request to the repository. Try to follow a format similar to the current codebase. All contributions are greatly appreciated!
 
 ## Credits
-- [@kwsch](https://github.com/kwsch) for providing the IPlugin interface in PKHeX making this plugin possible.
+- [@kwsch](https://github.com/kwsch) for providing the IPlugin interface in PKHeX making this plugin possible and for the pkNX code this plugin utilizes for the map location marking and display.
 - [@Lusamine](https://github.com/Lusamine) for the research of the Stored Shiny block in Legends: Z-A save files.
   
 <div align="center">
